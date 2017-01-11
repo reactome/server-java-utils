@@ -46,11 +46,16 @@ public class StaticFilesProxyServlet extends HttpServlet{
      *                             we can send a proxied response to the client
      */
     public void doGet(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse)
-            throws IOException, ServletException {
+            throws ServletException {
         String pathInfo = httpServletRequest.getPathInfo();
         File file = new File(this.stringFilePath + pathInfo);
-        byte[] rtn = FileUtils.readFileToString(file).getBytes();
-        httpServletResponse.getOutputStream().write(rtn);
+        try {
+            byte[] rtn = new byte[0];
+            rtn = FileUtils.readFileToString(file).getBytes();
+            httpServletResponse.getOutputStream().write(rtn);
+        } catch (IOException e) {
+            System.err.println(e.getMessage());
+        }
     }
 
     protected String getProxyFilePath() {
