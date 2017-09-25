@@ -397,7 +397,7 @@ public class ProxyServlet extends HttpServlet {
             } else {
                 response = new String(ungzip(httpMethodProxyRequest.getResponseBodyAsStream()));
             }
-            httpServletResponse.setContentLength(response.length());
+            httpServletResponse.setContentLength(response.getBytes().length);
             // Send the content to the client
             debug("Received status code: " + intProxyResponseCode, "Response: " + response);
             httpServletResponse.getWriter().write(response);
