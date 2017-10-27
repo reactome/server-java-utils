@@ -67,7 +67,7 @@ public class LruFolderContentChecker extends Thread {
         PriorityQueue<BasicFileAttributesAndPath> minHeap;
         //noinspection InfiniteLoopStatement
         try {
-            log.info(LruFolderContentChecker.class.getSimpleName() + " started");
+            log.info("LRU check started");
             while (active) {
                 //Check the current size of the folder.
                 currentSize = getFolderSize();
@@ -130,7 +130,7 @@ public class LruFolderContentChecker extends Thread {
         this.active = false;
         this.handlers.clear();
         super.interrupt();
-        log.info(LruFolderContentChecker.class.getSimpleName() + " interrupted");
+        log.info("LRU check interrupted");
     }
 
     //***************************/
