@@ -101,6 +101,10 @@ public class ProxyServlet extends HttpServlet {
         super.init(servletConfig);
 
         // Get the proxy host
+        String proxyProtocol = servletConfig.getInitParameter("proxyProtocol");
+        isSecure = proxyProtocol == null || proxyProtocol.isEmpty() || proxyProtocol.toLowerCase().equals("https");
+
+        // Get the proxy host
         String stringProxyHostNew = servletConfig.getInitParameter("proxyHost");
         if (stringProxyHostNew == null || stringProxyHostNew.length() == 0) {
             throw new IllegalArgumentException("Proxy host not set, please set init-param 'proxyHost' in web.xml");
@@ -537,6 +541,8 @@ public class ProxyServlet extends HttpServlet {
             return this.getProxyHost() + ":" + this.getProxyPort();
         }
     }
+
+
 
     protected String getProxyHost() {
         return this.stringProxyHost;
