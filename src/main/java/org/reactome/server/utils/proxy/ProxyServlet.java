@@ -14,12 +14,21 @@ import org.apache.commons.httpclient.methods.StringRequestEntity;
 import org.apache.commons.httpclient.methods.multipart.*;
 import org.apache.commons.io.IOUtils;
 
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
 
@@ -34,7 +43,7 @@ import java.util.zip.GZIPInputStream;
  * @author Antonio Fabregat (fabregat@ebi.ac.uk)
  * @author Florian Reisinger (florian@ebi.ac.uk)
  */
-@SuppressWarnings("UnusedDeclaration")
+@SuppressWarnings({"UnusedDeclaration", "WeakerAccess"})
 public class ProxyServlet extends HttpServlet {
 
     private static final boolean DEBUG = false;
@@ -152,7 +161,11 @@ public class ProxyServlet extends HttpServlet {
         setProxyRequestHeaders(httpServletRequest, getMethodProxyRequest);
 
         // Execute the proxy request
-        this.executeProxyRequest(getMethodProxyRequest, httpServletRequest, httpServletResponse);
+        try {
+            this.executeProxyRequest(getMethodProxyRequest, httpServletRequest, httpServletResponse);
+        } catch (KeyManagementException | NoSuchAlgorithmException e) {
+            debug(e.getMessage());
+        }
     }
 
     /**
@@ -187,7 +200,11 @@ public class ProxyServlet extends HttpServlet {
 
 
         // Execute the proxy request
-        this.executeProxyRequest(postMethodProxyRequest, httpServletRequest, httpServletResponse);
+        try {
+            this.executeProxyRequest(postMethodProxyRequest, httpServletRequest, httpServletResponse);
+        } catch (KeyManagementException | NoSuchAlgorithmException e) {
+            debug(e.getMessage());
+        }
     }
 
     /**
@@ -211,9 +228,9 @@ public class ProxyServlet extends HttpServlet {
         // Parse the request
         try {
             // Get the multipart items as a list
-            List<FileItem> listFileItems = (List<FileItem>) servletFileUpload.parseRequest(httpServletRequest);
+            List<FileItem> listFileItems = servletFileUpload.parseRequest(httpServletRequest);
             // Create a list to hold all of the parts
-            List<Part> listParts = new ArrayList<Part>();
+            List<Part> listParts = new ArrayList<>();
             // Iterate the multipart items list
             for (FileItem fileItemCurrent : listFileItems) {
                 // If the current item is a form field, then create a string part
@@ -268,7 +285,7 @@ public class ProxyServlet extends HttpServlet {
         // Get the client POST data as a Map
         Map<String, String[]> mapPostParameters = (Map<String, String[]>) httpServletRequest.getParameterMap();
         // Create a List to hold the NameValuePairs to be passed to the PostMethod
-        List<NameValuePair> listNameValuePairs = new ArrayList<NameValuePair>();
+        List<NameValuePair> listNameValuePairs = new ArrayList<>();
         // Iterate the parameter names
         for (String stringParameterName : mapPostParameters.keySet()) {
             // Iterate the values for each parameter name
@@ -296,7 +313,7 @@ public class ProxyServlet extends HttpServlet {
                                    HttpServletRequest httpServletRequest)
             throws IOException, ServletException {
         String contentType = httpServletRequest.getContentType();
-        String postContent = IOUtils.toString(httpServletRequest.getReader());;
+        String postContent = IOUtils.toString(httpServletRequest.getReader());
 
         // Hack
         if (contentType.startsWith("text/x-gwt-rpc")) {
@@ -338,7 +355,14 @@ public class ProxyServlet extends HttpServlet {
             HttpMethod httpMethodProxyRequest,
             HttpServletRequest httpServletRequest,
             HttpServletResponse httpServletResponse)
-            throws IOException, ServletException {
+            throws IOException, ServletException, KeyManagementException, NoSuchAlgorithmException {
+
+        if(isSecure) {
+            // configure the SSLContext with a TrustManager
+            SSLContext ctx = SSLContext.getInstance("TLS");
+            ctx.init(new KeyManager[0], new TrustManager[]{new DefaultTrustManager()}, new SecureRandom());
+            SSLContext.setDefault(ctx);
+        }
 
         // Create a default HttpClient
         HttpClient httpClient = new HttpClient();
@@ -600,6 +624,20 @@ public class ProxyServlet extends HttpServlet {
         }
     }
 
+    //DefaultTrustManager accepts all certificates
+    private static class DefaultTrustManager implements X509TrustManager {
+
+        @Override
+        public void checkClientTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {}
+
+        @Override
+        public void checkServerTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {}
+
+        @Override
+        public X509Certificate[] getAcceptedIssuers() {
+            return null;
+        }
+    }
 }
 
 
