@@ -40,7 +40,7 @@ Parameters: path of the folder to be monitored
             time (frequency of the checking, in seconds).
             ttl (time-to-live, in seconds)
             
-```html
+```java
 LruFolderContentChecker folderContentChecker = new LruFolderContentChecker(pathDirectory, maxSize, threshold, time, ttl);
 folderContentChecker.addCheckerFileDeletedHandler(this);
 ```
