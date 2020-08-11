@@ -63,6 +63,7 @@ public class LruFolderContentChecker extends Thread {
     //*************************/
     @Override
     public void run() {
+        System.out.println("File checker thread is running...");
         Long currentSize;
         PriorityQueue<BasicFileAttributesAndPath> minHeap;
         //noinspection InfiniteLoopStatement
@@ -76,6 +77,7 @@ public class LruFolderContentChecker extends Thread {
                     int heapSize = this.directory.list().length;
                     //heapSize is zero when the directory does not have files.
                     if (heapSize != 0) {
+                        System.out.println("second if");
                         //PriorityQueue of the structure to store the BasicFileAttributes and the Path, to be able to sort them using the
                         //lastAccessTime.
                         //This compare allows us to sort the elements by the lastAccessTime.
@@ -87,27 +89,63 @@ public class LruFolderContentChecker extends Thread {
                             //Traverse all the
                             BasicFileAttributes file;
                             FileTime now = FileTime.from(System.currentTimeMillis(), TimeUnit.MILLISECONDS);
+                            String[] folderpath = this.directory.list();
+                            int fileCounter= this.directory.list().length;
+                            System.out.println("file num is " + fileCounter);
                             for (String node : this.directory.list()) {
                                 file = Files.readAttributes(Paths.get(getPathFile(node)), BasicFileAttributes.class);
-
-                                if (now.compareTo(FileTime.from(file.lastAccessTime().toMillis() + this.ttl.toMillis(), TimeUnit.MILLISECONDS)) == 1) {
+                                System.out.println(node + " :lastModifiedTime is " + file.lastModifiedTime() + " lastAccessTime is " + file.lastAccessTime() + "  now  is " + now);
+                                Long value = file.lastAccessTime().toMillis() + this.ttl.toMillis();
+                                FileTime fileTimePlusOneWeek =FileTime.from(value, TimeUnit.MILLISECONDS);
+                                //delete -> now> fileTime + one week
+                                if (now.compareTo(fileTimePlusOneWeek) > 0) {
+                                    System.out.println("loop the folder and add the old file to map");
                                     minHeap.add(new BasicFileAttributesAndPath(file, getPathFile(node)));
                                 }
                             }
+
                             if (minHeap.size() > 0) {
-                                while (this.maxSize < (currentSize + this.threshold)) {
+                                System.out.println("delete old files................");
+                                while (this.maxSize < (currentSize + this.threshold) && minHeap.size() > 0) {
+                                    //    while (this.maxSize < (currentSize + this.threshold)) {
+                                    //Printing the top element and removing it from the PriorityQueue container
                                     BasicFileAttributesAndPath attrAndPath = minHeap.poll();
-                                    File toDelete = new File(attrAndPath.getPath());
-                                    if (toDelete.isFile()) {
-                                        FileUtils.forceDelete(toDelete);
-                                        for (LruFolderContentCheckerFileDeletedHandler handler : this.handlers) {
-                                            handler.onLruFolderContentCheckerFileDeleted(attrAndPath.getPath());
+                                    if (attrAndPath != null) {
+                                        File toDelete = new File(attrAndPath.getPath());
+                                        if (toDelete.isFile()) {
+                                            FileUtils.forceDelete(toDelete);
+                                            for (LruFolderContentCheckerFileDeletedHandler handler : this.handlers) {
+                                                handler.onLruFolderContentCheckerFileDeleted(attrAndPath.getPath());
+                                            }
                                         }
                                     }
                                     currentSize = getFolderSize();
                                 }
                             }
                         }
+
+
+
+                    /*    WatchService watchService = FileSystems.getDefault().newWatchService();
+                        Path path = Paths.get("/Users/reactome/Reactome/analysis/temp");
+                        path.register(
+                                watchService,
+                                StandardWatchEventKinds.ENTRY_CREATE,
+                                StandardWatchEventKinds.ENTRY_DELETE,
+                                StandardWatchEventKinds.ENTRY_MODIFY);
+
+                        WatchKey key;
+                        while ((key = watchService.take()) != null) {
+                            for (WatchEvent<?> event : key.pollEvents()) {
+                                System.out.println(
+                                        "Event kind:" + event.kind()
+                                                + ". File affected: " + event.context() + ".");
+                            }
+                            key.reset();
+                        }
+*/
+
+
                     }
                 } else {
                     log.error("Directory " + this.pathDirectory + " to check does not exist");
