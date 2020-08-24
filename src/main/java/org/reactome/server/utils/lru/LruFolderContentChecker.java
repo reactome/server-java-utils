@@ -99,7 +99,7 @@ public class LruFolderContentChecker extends Thread {
                             }
 
                             if (minHeap.size() > 0) {
-                                while (this.maxSize < (currentSize + this.threshold) ) {
+                                while (this.maxSize < (currentSize + this.threshold)) {
                                     //Printing the top element and removing it from the PriorityQueue container
                                     BasicFileAttributesAndPath attrAndPath = minHeap.poll();
                                     if (attrAndPath != null) {
