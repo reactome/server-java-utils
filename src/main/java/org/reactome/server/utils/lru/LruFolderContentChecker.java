@@ -11,10 +11,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
-import java.util.Comparator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.PriorityQueue;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 
@@ -73,7 +70,8 @@ public class LruFolderContentChecker extends Thread {
                 currentSize = getFolderSize();
                 if (currentSize != null) {
                     //This is used to force the min heap to that size. Then it avoids to increment the space.
-                    int heapSize = this.directory.list().length;
+                    String[] dirList = this.directory.list();
+                    int heapSize = Objects.requireNonNull(dirList).length;
                     //heapSize is zero when the directory does not have files.
                     if (heapSize != 0) {
                         //PriorityQueue of the structure to store the BasicFileAttributes and the Path, to be able to sort them using the
@@ -87,8 +85,7 @@ public class LruFolderContentChecker extends Thread {
                             //Traverse all the
                             BasicFileAttributes file;
                             FileTime now = FileTime.from(System.currentTimeMillis(), TimeUnit.MILLISECONDS);
-                            String[] folderpath = this.directory.list();
-                            for (String node : this.directory.list()) {
+                            for (String node : dirList) {
                                 file = Files.readAttributes(Paths.get(getPathFile(node)), BasicFileAttributes.class);
                                 // To compare with the current time(now), get the file lastAccessTime plus one week(ttl) as fileTime
                                 Long fileTimePlusOneWeek = file.lastAccessTime().toMillis() + this.ttl.toMillis();
@@ -102,8 +99,7 @@ public class LruFolderContentChecker extends Thread {
                             }
 
                             if (minHeap.size() > 0) {
-                                while (this.maxSize < (currentSize + this.threshold) && minHeap.size() > 0) {
-                                    //while (this.maxSize < (currentSize + this.threshold)) {
+                                while (this.maxSize < (currentSize + this.threshold) ) {
                                     //Printing the top element and removing it from the PriorityQueue container
                                     BasicFileAttributesAndPath attrAndPath = minHeap.poll();
                                     if (attrAndPath != null) {
