@@ -4,15 +4,20 @@ import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
-import org.apache.commons.httpclient.Header;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.NameValuePair;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.httpclient.methods.PostMethod;
-import org.apache.commons.httpclient.methods.StringRequestEntity;
-import org.apache.commons.httpclient.methods.multipart.*;
 import org.apache.commons.io.IOUtils;
+
+import org.apache.http.*;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.message.BasicHeader;
+import org.apache.http.message.BasicNameValuePair;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
@@ -27,10 +32,11 @@ import java.io.*;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * ProxyServlet from http://edwardstx.net/wiki/attach/HttpProxyServlet/ProxyServlet.java
@@ -38,8 +44,9 @@ import java.util.zip.GZIPInputStream;
  * <p/>
  * Patched to skip "Transfer-Encoding: chunked" headers, and avoid double slashes
  * in proxied URL's.
- *
+ * <p>
  * Modified for use in PRIDE projects by
+ *
  * @author Antonio Fabregat (fabregat@ebi.ac.uk)
  * @author Florian Reisinger (florian@ebi.ac.uk)
  */
@@ -81,7 +88,7 @@ public class ProxyServlet extends HttpServlet {
      */
     private String stringProxyHost;
     /**
-     * The port on the proxy host to wihch we are proxying requests. Default value is 80.
+     * The port on the proxy host to which we are proxying requests. Default value is 80.
      */
     private int intProxyPort = 80;
     /**
@@ -104,6 +111,7 @@ public class ProxyServlet extends HttpServlet {
 
     /**
      * Initialize the <code>ProxyServlet</code>
+     *
      * @param servletConfig The Servlet configuration passed in by the servlet container
      */
     public void init(ServletConfig servletConfig) throws ServletException {
@@ -111,7 +119,7 @@ public class ProxyServlet extends HttpServlet {
 
         // Get the proxy host
         String proxyProtocol = servletConfig.getInitParameter("proxyProtocol");
-        isSecure = proxyProtocol == null || proxyProtocol.isEmpty() || proxyProtocol.toLowerCase().equals("https");
+        isSecure = proxyProtocol == null || proxyProtocol.isEmpty() || proxyProtocol.equalsIgnoreCase("https");
 
         // Get the proxy host
         String stringProxyHostNew = servletConfig.getInitParameter("proxyHost");
@@ -144,11 +152,12 @@ public class ProxyServlet extends HttpServlet {
 
     /**
      * Performs an HTTP GET request
-     * @param httpServletRequest The {@link HttpServletRequest} object passed
+     *
+     * @param httpServletRequest  The {@link HttpServletRequest} object passed
      *                            in by the servlet engine representing the
      *                            client request to be proxied
      * @param httpServletResponse The {@link HttpServletResponse} object by which
-     *                             we can send a proxied response to the client
+     *                            we can send a proxied response to the client
      */
     public void doGet(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse)
             throws IOException, ServletException {
@@ -156,7 +165,7 @@ public class ProxyServlet extends HttpServlet {
         String destinationUrl = this.getProxyURL(httpServletRequest);
         debug("GET Request URL: " + httpServletRequest.getRequestURL(),
                 "Destination URL: " + destinationUrl);
-        GetMethod getMethodProxyRequest = new GetMethod(destinationUrl);
+        HttpGet getMethodProxyRequest = new HttpGet(destinationUrl);
         // Forward the request headers
         setProxyRequestHeaders(httpServletRequest, getMethodProxyRequest);
 
@@ -170,11 +179,12 @@ public class ProxyServlet extends HttpServlet {
 
     /**
      * Performs an HTTP POST request
-     * @param httpServletRequest The {@link HttpServletRequest} object passed
+     *
+     * @param httpServletRequest  The {@link HttpServletRequest} object passed
      *                            in by the servlet engine representing the
      *                            client request to be proxied
      * @param httpServletResponse The {@link HttpServletResponse} object by which
-     *                             we can send a proxied response to the client
+     *                            we can send a proxied response to the client
      */
     public void doPost(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse)
             throws IOException, ServletException {
@@ -184,14 +194,15 @@ public class ProxyServlet extends HttpServlet {
         debug("POST Request URL: " + httpServletRequest.getRequestURL(),
                 "    Content Type: " + contentType,
                 " Destination URL: " + destinationUrl);
-        PostMethod postMethodProxyRequest = new PostMethod(destinationUrl);
+        HttpPost postMethodProxyRequest = new HttpPost(destinationUrl);
         // Forward the request headers
         setProxyRequestHeaders(httpServletRequest, postMethodProxyRequest);
-        // Check if this is a mulitpart (file upload) POST
+        // Check if this is a multipart (file upload) POST
         if (ServletFileUpload.isMultipartContent(httpServletRequest)) {
             this.handleMultipartPost(postMethodProxyRequest, httpServletRequest);
         } else {
-            if (contentType == null || PostMethod.FORM_URL_ENCODED_CONTENT_TYPE.equals(contentType)) {
+            String encodedContentType = "application/x-www-form-urlencoded";
+            if (contentType == null || encodedContentType.equals(contentType)) {
                 this.handleStandardPost(postMethodProxyRequest, httpServletRequest);
             } else {
                 this.handleContentPost(postMethodProxyRequest, httpServletRequest);
@@ -208,15 +219,16 @@ public class ProxyServlet extends HttpServlet {
     }
 
     /**
-     * Sets up the given {@link PostMethod} to send the same multipart POST
+     * Sets up the given {@link HttpPost} to send the same multipart POST
      * data as was sent in the given {@link HttpServletRequest}
-     * @param postMethodProxyRequest The {@link PostMethod} that we are
-     *                                configuring to send a multipart POST request
-     * @param httpServletRequest The {@link HttpServletRequest} that contains
-     *                            the mutlipart POST data to be sent via the {@link PostMethod}
+     *
+     * @param postMethodProxyRequest The {@link HttpPost} that we are
+     *                               configuring to send a multipart POST request
+     * @param httpServletRequest     The {@link HttpServletRequest} that contains
+     *                               the mutlipart POST data to be sent via the {@link HttpPost}
      */
     @SuppressWarnings("unchecked")
-    private void handleMultipartPost(PostMethod postMethodProxyRequest, HttpServletRequest httpServletRequest)
+    private void handleMultipartPost(HttpPost postMethodProxyRequest, HttpServletRequest httpServletRequest)
             throws ServletException {
         // Create a factory for disk-based file items
         DiskFileItemFactory diskFileItemFactory = new DiskFileItemFactory();
@@ -225,39 +237,26 @@ public class ProxyServlet extends HttpServlet {
         diskFileItemFactory.setRepository(FILE_UPLOAD_TEMP_DIRECTORY);
         // Create a new file upload handler
         ServletFileUpload servletFileUpload = new ServletFileUpload(diskFileItemFactory);
+
+        MultipartEntityBuilder builder = MultipartEntityBuilder.create();
         // Parse the request
         try {
             // Get the multipart items as a list
             List<FileItem> listFileItems = servletFileUpload.parseRequest(httpServletRequest);
-            // Create a list to hold all of the parts
-            List<Part> listParts = new ArrayList<>();
             // Iterate the multipart items list
             for (FileItem fileItemCurrent : listFileItems) {
                 // If the current item is a form field, then create a string part
                 if (fileItemCurrent.isFormField()) {
-                    StringPart stringPart = new StringPart(
-                            fileItemCurrent.getFieldName(), // The field name
-                            fileItemCurrent.getString() // The field value
-                    );
-                    // Add the part to the list
-                    listParts.add(stringPart);
+                    builder.addTextBody(fileItemCurrent.getFieldName(), fileItemCurrent.getString());
                 } else {
                     // The item is a file upload, so we create a FilePart
-                    FilePart filePart = new FilePart(
-                            fileItemCurrent.getFieldName(), // The field name
-                            new ByteArrayPartSource(
-                                    fileItemCurrent.getName(), // The uploaded file name
-                                    fileItemCurrent.get() // The uploaded file contents
-                            ));
-                    // Add the part to the list
-                    listParts.add(filePart);
+                    builder.addBinaryBody(fileItemCurrent.getFieldName(), fileItemCurrent.get(), ContentType.DEFAULT_BINARY, fileItemCurrent.getName());
                 }
             }
-            @SuppressWarnings("ToArrayCallWithZeroLengthArrayArgument")
-            MultipartRequestEntity multipartRequestEntity = new MultipartRequestEntity(
-                    listParts.toArray(new Part[]{}),
-                    postMethodProxyRequest.getParams());
-            postMethodProxyRequest.setRequestEntity(multipartRequestEntity);
+
+            HttpEntity entity = builder.build();
+            postMethodProxyRequest.setEntity(entity);
+
             // The current content-type header (received from the client) IS of
             // type "multipart/form-data", but the content-type header also
             // contains the chunk boundary string of the chunks. Currently, this
@@ -266,24 +265,27 @@ public class ProxyServlet extends HttpServlet {
             // request. However, we are creating a new request with a new chunk
             // boundary string, so it is necessary that we re-set the
             // content-type string to reflect the new chunk boundary string
-            postMethodProxyRequest.setRequestHeader(STRING_CONTENT_TYPE_HEADER_NAME, multipartRequestEntity.getContentType());
+
+            postMethodProxyRequest.setHeader(STRING_CONTENT_TYPE_HEADER_NAME, entity.getContentType().getValue());
+
         } catch (FileUploadException fileUploadException) {
             throw new ServletException(fileUploadException);
         }
     }
 
     /**
-     * Sets up the given {@link PostMethod} to send the same standard POST
+     * Sets up the given {@link HttpPost} to send the same standard POST
      * data as was sent in the given {@link HttpServletRequest}
-     * @param postMethodProxyRequest The {@link PostMethod} that we are
-     *                                configuring to send a standard POST request
-     * @param httpServletRequest The {@link HttpServletRequest} that contains
-     *                            the POST data to be sent via the {@link PostMethod}
+     *
+     * @param postMethodProxyRequest The {@link HttpPost} that we are
+     *                               configuring to send a standard POST request
+     * @param httpServletRequest     The {@link HttpServletRequest} that contains
+     *                               the POST data to be sent via the {@link HttpPost}
      */
     @SuppressWarnings("unchecked")
-    private void handleStandardPost(PostMethod postMethodProxyRequest, HttpServletRequest httpServletRequest) {
+    private void handleStandardPost(HttpPost postMethodProxyRequest, HttpServletRequest httpServletRequest) {
         // Get the client POST data as a Map
-        Map<String, String[]> mapPostParameters = (Map<String, String[]>) httpServletRequest.getParameterMap();
+        Map<String, String[]> mapPostParameters = httpServletRequest.getParameterMap();
         // Create a List to hold the NameValuePairs to be passed to the PostMethod
         List<NameValuePair> listNameValuePairs = new ArrayList<>();
         // Iterate the parameter names
@@ -292,72 +294,69 @@ public class ProxyServlet extends HttpServlet {
             String[] stringArrayParameterValues = mapPostParameters.get(stringParameterName);
             for (String stringParamterValue : stringArrayParameterValues) {
                 // Create a NameValuePair and store in list
-                NameValuePair nameValuePair = new NameValuePair(stringParameterName, stringParamterValue);
+                BasicNameValuePair nameValuePair = new BasicNameValuePair(stringParameterName, stringParamterValue);
                 listNameValuePairs.add(nameValuePair);
             }
         }
         // Set the proxy request POST data
         //noinspection ToArrayCallWithZeroLengthArrayArgument
-        postMethodProxyRequest.setRequestBody(listNameValuePairs.toArray(new NameValuePair[]{}));
+        postMethodProxyRequest.setEntity(new UrlEncodedFormEntity(listNameValuePairs, Consts.UTF_8));
     }
 
     /**
-     * Sets up the given {@link PostMethod} to send the same content POST
+     * Sets up the given {@link HttpPost} to send the same content POST
      * data (JSON, XML, etc.) as was sent in the given {@link HttpServletRequest}
-     * @param postMethodProxyRequest The {@link PostMethod} that we are
-     *                                configuring to send a standard POST request
-     * @param httpServletRequest The {@link HttpServletRequest} that contains
-     *                            the POST data to be sent via the {@link PostMethod}
+     *
+     * @param postMethodProxyRequest The {@link HttpPost} that we are
+     *                               configuring to send a standard POST request
+     * @param httpServletRequest     The {@link HttpServletRequest} that contains
+     *                               the POST data to be sent via the {@link HttpPost}
      */
-    private void handleContentPost(PostMethod postMethodProxyRequest,
+    private void handleContentPost(HttpPost postMethodProxyRequest,
                                    HttpServletRequest httpServletRequest)
-            throws IOException, ServletException {
+            throws IOException {
         String contentType = httpServletRequest.getContentType();
         String postContent = IOUtils.toString(httpServletRequest.getReader());
-
         // Hack
         if (contentType.startsWith("text/x-gwt-rpc")) {
             String clientHost = httpServletRequest.getLocalName();
             if (clientHost.equals("127.0.0.1")) {
                 clientHost = "localhost";
             }
-
             int clientPort = httpServletRequest.getLocalPort();
             String clientUrl = clientHost + ((clientPort != 80) ? ":" +
                     clientPort : "");
-            String serverUrl= stringProxyHost + ((intProxyPort != 80) ? ":" +
-                    intProxyPort : "")+stringPrefixPath;
+            String serverUrl = stringProxyHost + ((intProxyPort != 80) ? ":" +
+                    intProxyPort : "") + stringPrefixPath;
             postContent = postContent.replace(clientUrl, serverUrl);
         }
 
         String encoding = httpServletRequest.getCharacterEncoding();
         debug("POST Content Type: " + contentType + " Encoding: " + encoding, "Content: " + postContent);
-        StringRequestEntity entity;
-        try {
-            entity = new StringRequestEntity(postContent, contentType, encoding);
-        } catch (UnsupportedEncodingException e) {
-            throw new ServletException(e);
-        }
+
+        StringEntity entity = new StringEntity(postContent, ContentType.APPLICATION_JSON);
+
         // Set the proxy request POST data
-        postMethodProxyRequest.setRequestEntity(entity);
+        postMethodProxyRequest.setEntity(entity);
     }
 
     /**
-     * Executes the {@link HttpMethod} passed in and sends the proxy response
+     * Executes the {@link HttpUriRequest} passed in and sends the proxy response
      * back to the client via the given {@link HttpServletResponse}
+     *
      * @param httpMethodProxyRequest An object representing the proxy request to be made
-     * @param httpServletResponse An object by which we can send the proxied
-     *                             response back to the client
+     * @param httpServletResponse    An object by which we can send the proxied
+     *                               response back to the client
      * @throws java.io.IOException Can be thrown by the {@link HttpClient}.executeMethod
-     * @throws ServletException Can be thrown to indicate that another error has occurred
+     * @throws ServletException    Can be thrown to indicate that another error has occurred
      */
     private void executeProxyRequest(
-            HttpMethod httpMethodProxyRequest,
+            HttpUriRequest httpMethodProxyRequest,
             HttpServletRequest httpServletRequest,
             HttpServletResponse httpServletResponse)
             throws IOException, ServletException, KeyManagementException, NoSuchAlgorithmException {
 
-        if(isSecure) {
+        if (isSecure) {
             // configure the SSLContext with a TrustManager
             SSLContext ctx = SSLContext.getInstance("TLS");
             ctx.init(new KeyManager[0], new TrustManager[]{new DefaultTrustManager()}, new SecureRandom());
@@ -365,18 +364,20 @@ public class ProxyServlet extends HttpServlet {
         }
 
         // Create a default HttpClient
-        HttpClient httpClient = new HttpClient();
-        httpMethodProxyRequest.setFollowRedirects(false);
+        HttpClient httpClient = HttpClientBuilder.create().disableRedirectHandling().build();
+        // Create a response
+        HttpResponse httpResponse = httpClient.execute(httpMethodProxyRequest);
+
         // Execute the request
-        int intProxyResponseCode = httpClient.executeMethod(httpMethodProxyRequest);
+        int intProxyResponseCode = httpResponse.getStatusLine().getStatusCode();
 
         // Check if the proxy response is a redirect
         // The following code is adapted from org.tigris.noodle.filters.CheckForRedirect
         // Hooray for open source software
         if (intProxyResponseCode >= HttpServletResponse.SC_MULTIPLE_CHOICES /* 300 */ && intProxyResponseCode < HttpServletResponse.SC_NOT_MODIFIED /* 304 */) {
             String stringStatusCode = Integer.toString(intProxyResponseCode);
-            String stringLocation = httpMethodProxyRequest.getResponseHeader(STRING_LOCATION_HEADER).getValue();
-            if (stringLocation == null) {
+            String stringLocation = Arrays.toString(httpResponse.getHeaders(STRING_LOCATION_HEADER));
+            if (stringLocation.isEmpty()) {
                 throw new ServletException("Received status code: " + stringStatusCode + " but no " + STRING_LOCATION_HEADER + " header was found in the response");
             }
             // Modify the redirect to go to this proxy servlet rather that the proxied host
@@ -405,7 +406,7 @@ public class ProxyServlet extends HttpServlet {
         httpServletResponse.setStatus(intProxyResponseCode);
 
         // Pass response headers back to the client
-        Header[] headerArrayResponse = httpMethodProxyRequest.getResponseHeaders();
+        Header[] headerArrayResponse = httpResponse.getAllHeaders();
         for (Header header : headerArrayResponse) {
             if ((!header.getName().equals("Transfer-Encoding") || !header.getValue().equals("chunked")) &&
                     (!header.getName().equals("Content-Encoding") || !header.getValue().equals("gzip"))) {
@@ -416,21 +417,25 @@ public class ProxyServlet extends HttpServlet {
         List<Header> responseHeaders = Arrays.asList(headerArrayResponse);
         if (isBodyParameterGzipped(responseHeaders)) {
             String response;
+            byte[] aux;
             debug("GZipped: true");
             if (!followRedirects && intProxyResponseCode == HttpServletResponse.SC_MOVED_TEMPORARILY) {
-                response = httpMethodProxyRequest.getResponseHeader(STRING_LOCATION_HEADER).getValue();
+                response = Arrays.toString(httpResponse.getHeaders(STRING_LOCATION_HEADER));
+                aux = Arrays.toString(httpResponse.getHeaders(STRING_LOCATION_HEADER)).getBytes(UTF_8);
                 httpServletResponse.setStatus(HttpServletResponse.SC_OK);
                 intProxyResponseCode = HttpServletResponse.SC_OK;
                 httpServletResponse.setHeader(STRING_LOCATION_HEADER, response);
             } else {
-                response = new String(ungzip(httpMethodProxyRequest.getResponseBodyAsStream()));
+                aux = IOUtils.toByteArray(httpResponse.getEntity().getContent());
             }
-            httpServletResponse.setContentLength(response.getBytes().length);
+
+            httpServletResponse.setContentLength((int) httpResponse.getEntity().getContentLength());
+
             // Send the content to the client
-            debug("Received status code: " + intProxyResponseCode, "Response: " + response);
-            httpServletResponse.getWriter().write(response);
-        }else{
-            byte[] aux = IOUtils.toByteArray(httpMethodProxyRequest.getResponseBodyAsStream());
+            debug("Received status code: " + intProxyResponseCode, "Response is gzipped content");
+            httpServletResponse.getOutputStream().write(aux);
+        } else {
+            byte[] aux = IOUtils.toByteArray(httpResponse.getEntity().getContent());
             httpServletResponse.getOutputStream().write(aux);
         }
     }
@@ -443,7 +448,7 @@ public class ProxyServlet extends HttpServlet {
      */
     private boolean isBodyParameterGzipped(List<Header> responseHeaders) {
         for (Header header : responseHeaders) {
-            if (header.getValue().equals("gzip")) {
+            if (header.getValue().equals("gzip") || header.getValue().contains("gzip")) {
                 return true;
             }
         }
@@ -483,13 +488,13 @@ public class ProxyServlet extends HttpServlet {
      * Retreives all of the headers from the servlet request and sets them on
      * the proxy request
      *
-     * @param httpServletRequest The request object representing the client's
-     *                            request to the servlet engine
+     * @param httpServletRequest     The request object representing the client's
+     *                               request to the servlet engine
      * @param httpMethodProxyRequest The request that we are about to send to
-     *                                the proxy host
+     *                               the proxy host
      */
     @SuppressWarnings("unchecked")
-    private void setProxyRequestHeaders(HttpServletRequest httpServletRequest, HttpMethod httpMethodProxyRequest) {
+    private void setProxyRequestHeaders(HttpServletRequest httpServletRequest, HttpUriRequest httpMethodProxyRequest) {
         // Get an Enumeration of all of the header names sent by the client
         Enumeration enumerationOfHeaderNames = httpServletRequest.getHeaderNames();
         while (enumerationOfHeaderNames.hasMoreElements()) {
@@ -511,9 +516,9 @@ public class ProxyServlet extends HttpServlet {
                 if (stringHeaderName.equalsIgnoreCase(STRING_HOST_HEADER_NAME)) {
                     stringHeaderValue = getProxyHostAndPort();
                 }
-                Header header = new Header(stringHeaderName, stringHeaderValue);
+                Header header = new BasicHeader(stringHeaderName, stringHeaderValue);
                 // Set the same header on the proxy request
-                httpMethodProxyRequest.setRequestHeader(header);
+                httpMethodProxyRequest.setHeader(header);
             }
         }
     }
@@ -547,7 +552,7 @@ public class ProxyServlet extends HttpServlet {
             }
         } else { // pathInfo == null
             // remove the trailing '/' we added before
-            stringProxyURL = stringProxyURL.substring(0,stringProxyURL.length()-1);
+            stringProxyURL = stringProxyURL.substring(0, stringProxyURL.length() - 1);
         }
 
         // Handle the query string
@@ -565,7 +570,6 @@ public class ProxyServlet extends HttpServlet {
             return this.getProxyHost() + ":" + this.getProxyPort();
         }
     }
-
 
 
     protected String getProxyHost() {
@@ -618,7 +622,7 @@ public class ProxyServlet extends HttpServlet {
 
     private void debug(String... msg) {
         //noinspection PointlessBooleanExpression,ConstantConditions
-        if(!DEBUG) return;
+        if (!DEBUG) return;
         for (String m : msg) {
             System.out.println("[DEBUG] " + m);
         }
@@ -628,10 +632,12 @@ public class ProxyServlet extends HttpServlet {
     private static class DefaultTrustManager implements X509TrustManager {
 
         @Override
-        public void checkClientTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {}
+        public void checkClientTrusted(X509Certificate[] arg0, String arg1) {
+        }
 
         @Override
-        public void checkServerTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {}
+        public void checkServerTrusted(X509Certificate[] arg0, String arg1) {
+        }
 
         @Override
         public X509Certificate[] getAcceptedIssuers() {
@@ -639,5 +645,3 @@ public class ProxyServlet extends HttpServlet {
         }
     }
 }
-
-
