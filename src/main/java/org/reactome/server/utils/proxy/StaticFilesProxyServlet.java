@@ -9,6 +9,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 
 /**
  * ProxyServlet access files through http. Used to access static resources in development mode
@@ -45,13 +46,12 @@ public class StaticFilesProxyServlet extends HttpServlet{
      * @param httpServletResponse The {@link HttpServletResponse} object by which
      *                             we can send a proxied response to the client
      */
-    public void doGet(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse)
-            throws ServletException {
+    public void doGet(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
         String pathInfo = httpServletRequest.getPathInfo();
         File file = new File(this.stringFilePath + pathInfo);
         try {
-            byte[] rtn = new byte[0];
-            rtn = FileUtils.readFileToString(file).getBytes();
+            byte[] rtn;
+            rtn = FileUtils.readFileToString(file, Charset.defaultCharset()).getBytes();
             httpServletResponse.getOutputStream().write(rtn);
         } catch (IOException e) {
             System.err.println(e.getMessage());
