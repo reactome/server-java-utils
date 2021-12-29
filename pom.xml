@@ -37,9 +37,9 @@
         <developer>
             <id>gsviteri</id>
             <name>Guilherme Viteri</name>
-            <email>gviteri@ebi.ac.uk</email>
-            <organization>The European Bioinformatics Institute</organization>
-            <organizationUrl>https://www.ebi.ac.uk</organizationUrl>
+            <roles>
+                <role>alumni</role>
+            </roles>
         </developer>
 
         <developer>
