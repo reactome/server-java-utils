@@ -74,12 +74,12 @@
         <project.reporting.outputEncoding>${project.encoding}</project.reporting.outputEncoding>
 
         <!-- maven build and plugins -->
-        <maven.compiler.version>3.8.1</maven.compiler.version>
-        <maven.gpg.version>1.5</maven.gpg.version>
-        <maven.javadoc.version>2.10.3</maven.javadoc.version>
-        <maven.release.version>2.2.1</maven.release.version>
-        <maven.source.version>2.1.2</maven.source.version>
-        <nexus-staging-maven-plugin>1.6.7</nexus-staging-maven-plugin>
+        <maven.compiler.version>3.13.0</maven.compiler.version>
+        <maven.gpg.version>3.2.7</maven.gpg.version>
+        <maven.javadoc.version>3.11.2</maven.javadoc.version>
+        <maven.release.version>3.3.1</maven.release.version>
+        <maven.source.version>3.3.1</maven.source.version>
+        <nexus-staging-maven-plugin>1.7.0</nexus-staging-maven-plugin>
     </properties>
 
     <dependencies>
