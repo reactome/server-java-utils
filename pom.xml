@@ -66,7 +66,6 @@
     <properties>
         <!-- dependencies -->
         <tomcat.servlet.api.version>9.0.31</tomcat.servlet.api.version>
-        <slf4j.version>1.7.32</slf4j.version>
 
         <!-- build -->
         <jdk.version>1.8</jdk.version>
