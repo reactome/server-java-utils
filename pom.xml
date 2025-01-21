@@ -6,12 +6,18 @@
 
     <groupId>org.reactome.server.utils</groupId>
     <artifactId>reactome-utils</artifactId>
-    <version>1.0.12-SNAPSHOT</version>
+    <version>1.1.6-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name>${project.groupId}:${project.artifactId}</name>
+    <name>Utils</name>
     <description>Server side utilities shared across different projects</description>
     <url>https://github.com/reactome/server-java-utils/</url>
+
+    <parent>
+        <groupId>org.reactome.maven</groupId>
+        <artifactId>reactome-parent</artifactId>
+        <version>1.0.5</version>
+    </parent>
 
     <organization>
         <name>Reactome</name>
@@ -59,10 +65,6 @@
 
     <properties>
         <!-- dependencies -->
-        <apache.httpcomponents.httpclient.version>4.5.13</apache.httpcomponents.httpclient.version>
-        <commons.fileupload.version>1.3.3</commons.fileupload.version>
-        <commons.httpclient.version>3.1</commons.httpclient.version>
-        <commons.io.version>2.11.0</commons.io.version>
         <tomcat.servlet.api.version>9.0.31</tomcat.servlet.api.version>
         <slf4j.version>1.7.32</slf4j.version>
 
@@ -90,34 +92,29 @@
         </dependency>
 
         <dependency>
-            <groupId>commons-httpclient</groupId>
-            <artifactId>commons-httpclient</artifactId>
-            <version>${commons.httpclient.version}</version>
-        </dependency>
-
-        <dependency>
             <groupId>commons-fileupload</groupId>
             <artifactId>commons-fileupload</artifactId>
-            <version>${commons.fileupload.version}</version>
         </dependency>
 
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>${commons.io.version}</version>
         </dependency>
 
         <!--http client for post file-->
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-            <version>${apache.httpcomponents.httpclient.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpmime</artifactId>
         </dependency>
 
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>${slf4j.version}</version>
         </dependency>
     </dependencies>
 
@@ -128,8 +125,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${maven.compiler.version}</version>
                 <configuration>
-                    <source>${jdk.version}</source>
-                    <target>${jdk.version}</target>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
                 </configuration>
             </plugin>
 
@@ -238,4 +235,31 @@
             </releases>
         </pluginRepository>
     </pluginRepositories>
+
+    <repositories>
+        <!-- EBI repo -->
+        <repository>
+            <id>nexus-ebi-repo</id>
+            <name>The EBI internal repository</name>
+            <url>https://www.ebi.ac.uk/Tools/maven/repos/content/groups/ebi-repo/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <!-- EBI SNAPSHOT repo -->
+        <repository>
+            <id>nexus-ebi-snapshot-repo</id>
+            <name>The EBI internal snapshot repository</name>
+            <url>https://www.ebi.ac.uk/Tools/maven/repos/content/groups/ebi-snapshots/</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
 </project>
