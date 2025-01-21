@@ -41,10 +41,10 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 /**
  * ProxyServlet from http://edwardstx.net/wiki/attach/HttpProxyServlet/ProxyServlet.java
  * (This seems to be a derivative of Noodle -- http://noodle.tigris.org/)
- * <p/>
+ *
  * Patched to skip "Transfer-Encoding: chunked" headers, and avoid double slashes
  * in proxied URL's.
- * <p>
+ *
  * Modified for use in PRIDE projects by
  *
  * @author Antonio Fabregat (fabregat@ebi.ac.uk)
