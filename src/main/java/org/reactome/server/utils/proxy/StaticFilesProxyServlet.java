@@ -15,7 +15,7 @@ import java.nio.charset.Charset;
  * ProxyServlet access files through http. Used to access static resources in development mode
  * without the need of installing an apache server.
  *
- * @author Antonio Fabregat <fabregat@ebi.ac.uk>
+ * @author Antonio Fabregat (fabregat@ebi.ac.uk)
  */
 public class StaticFilesProxyServlet extends HttpServlet{
 
