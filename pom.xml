@@ -1,149 +1,128 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-
-    <groupId>org.reactome.server.utils</groupId>
-    <artifactId>reactome-utils</artifactId>
-    <version>1.1.6-SNAPSHOT</version>
-    <packaging>jar</packaging>
-
-    <name>Utils</name>
-    <description>Server side utilities shared across different projects</description>
-    <url>https://github.com/reactome/server-java-utils/</url>
-
-    <parent>
-        <groupId>org.reactome.maven</groupId>
-        <artifactId>reactome-parent</artifactId>
-        <version>1.0.5</version>
-    </parent>
-
-    <organization>
-        <name>Reactome</name>
-        <url>https://reactome.org</url>
-    </organization>
-
-    <licenses>
-        <license>
-            <name>The Apache Software License, Version 2.0</name>
-            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
-        </license>
-    </licenses>
-
-    <developers>
-        <developer>
-            <id>fabregat</id>
-            <name>Antonio Fabregat</name>
-            <roles>
-                <role>alumni</role>
-            </roles>
-        </developer>
-
-        <developer>
-            <id>gsviteri</id>
-            <name>Guilherme Viteri</name>
-            <roles>
-                <role>alumni</role>
-            </roles>
-        </developer>
-
-        <developer>
-            <id>cqgong</id>
-            <name>Chuqiao Gong</name>
-            <email>cgong@ebi.ac.uk</email>
-            <organization>The European Bioinformatics Institute</organization>
-            <organizationUrl>https://www.ebi.ac.uk</organizationUrl>
-        </developer>
-    </developers>
-
-    <scm>
-        <connection>scm:git:git://github.com/reactome/server-java-utils.git</connection>
-        <developerConnection>scm:git:ssh://github.com/reactome/server-java-utils.git</developerConnection>
-        <url>https://github.com/reactome/server-java-utils/tree/master</url>
-    </scm>
-
-    <properties>
-        <!-- dependencies -->
-        <tomcat.servlet.api.version>9.0.31</tomcat.servlet.api.version>
-
-        <!-- build -->
-        <jdk.version>1.8</jdk.version>
-        <project.encoding>UTF-8</project.encoding>
-        <project.build.sourceEncoding>${project.encoding}</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>${project.encoding}</project.reporting.outputEncoding>
-
-        <!-- maven build and plugins -->
-        <maven.compiler.version>3.13.0</maven.compiler.version>
-        <maven.gpg.version>3.2.7</maven.gpg.version>
-        <maven.javadoc.version>3.11.2</maven.javadoc.version>
-        <maven.release.version>3.3.1</maven.release.version>
-        <maven.source.version>3.3.1</maven.source.version>
-        <nexus-staging-maven-plugin>1.7.0</nexus-staging-maven-plugin>
-    </properties>
-
-    <dependencies>
-        <dependency>
-            <groupId>org.apache.tomcat</groupId>
-            <artifactId>tomcat-servlet-api</artifactId>
-            <version>${tomcat.servlet.api.version}</version> <!-- Match your Tomcat version -->
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>commons-fileupload</groupId>
-            <artifactId>commons-fileupload</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-        </dependency>
-
-        <!--http client for post file-->
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpmime</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-        </dependency>
-    </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>${maven.compiler.version}</version>
-                <configuration>
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
-                </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-                <version>${maven.source.version}</version>
-                <executions>
-                    <execution>
-                        <id>attach-sources</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>jar-no-fork</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-<!--
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.reactome.server.utils</groupId>
+  <artifactId>reactome-utils</artifactId>
+  <version>1.2.0</version>
+  <packaging>jar</packaging>
+  <name>Utils</name>
+  <description>Server side utilities shared across different projects</description>
+  <url>https://github.com/reactome/server-java-utils/</url>
+  <parent>
+    <groupId>org.reactome.maven</groupId>
+    <artifactId>reactome-parent</artifactId>
+    <version>1.1.0</version>
+  </parent>
+  <organization>
+    <name>Reactome</name>
+    <url>https://reactome.org</url>
+  </organization>
+  <licenses>
+    <license>
+      <name>The Apache Software License, Version 2.0</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+    </license>
+  </licenses>
+  <developers>
+    <developer>
+      <id>fabregat</id>
+      <name>Antonio Fabregat</name>
+      <roles>
+        <role>alumni</role>
+      </roles>
+    </developer>
+    <developer>
+      <id>gsviteri</id>
+      <name>Guilherme Viteri</name>
+      <roles>
+        <role>alumni</role>
+      </roles>
+    </developer>
+    <developer>
+      <id>cqgong</id>
+      <name>Chuqiao Gong</name>
+      <email>cgong@ebi.ac.uk</email>
+      <organization>The European Bioinformatics Institute</organization>
+      <organizationUrl>https://www.ebi.ac.uk</organizationUrl>
+    </developer>
+  </developers>
+  <scm>
+    <connection>scm:git:git://github.com/reactome/server-java-utils.git</connection>
+    <developerConnection>scm:git:ssh://github.com/reactome/server-java-utils.git</developerConnection>
+    <url>https://github.com/reactome/server-java-utils/tree/master</url>
+  </scm>
+  <properties>
+    <!-- dependencies -->
+    <tomcat.servlet.api.version>9.0.31</tomcat.servlet.api.version>
+    <!-- build -->
+    <jdk.version>1.8</jdk.version>
+    <project.encoding>UTF-8</project.encoding>
+    <project.build.sourceEncoding>${project.encoding}</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>${project.encoding}</project.reporting.outputEncoding>
+    <!-- maven build and plugins -->
+    <maven.compiler.version>3.13.0</maven.compiler.version>
+    <maven.gpg.version>3.2.7</maven.gpg.version>
+    <maven.javadoc.version>3.11.2</maven.javadoc.version>
+    <maven.release.version>3.3.1</maven.release.version>
+    <maven.source.version>3.3.1</maven.source.version>
+    <nexus-staging-maven-plugin>1.7.0</nexus-staging-maven-plugin>
+  </properties>
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.tomcat</groupId>
+      <artifactId>tomcat-servlet-api</artifactId>
+      <version>${tomcat.servlet.api.version}</version>
+      <!-- Match your Tomcat version -->
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>commons-fileupload</groupId>
+      <artifactId>commons-fileupload</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+    </dependency>
+    <!--http client for post file-->
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpmime</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+  </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>${maven.compiler.version}</version>
+        <configuration>
+          <source>${java.version}</source>
+          <target>${java.version}</target>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <version>${maven.source.version}</version>
+        <executions>
+          <execution>
+            <id>attach-sources</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>jar-no-fork</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <!--
             &lt;!&ndash; Nexus staging plugin for Sonatype deployment &ndash;&gt;
             <plugin>
                 <groupId>org.sonatype.plugins</groupId>
@@ -201,10 +180,9 @@
                     <goals>deploy</goals>
                 </configuration>
             </plugin>-->
-        </plugins>
-    </build>
-
-<!--    &lt;!&ndash; Configures the distribution to nexus repository &ndash;&gt;
+    </plugins>
+  </build>
+  <!--    &lt;!&ndash; Configures the distribution to nexus repository &ndash;&gt;
     <distributionManagement>
         &lt;!&ndash; Sonatype Release repo &ndash;&gt;
         <repository>
@@ -220,46 +198,44 @@
             <url>https://oss.sonatype.org/content/repositories/snapshots</url>
         </snapshotRepository>
     </distributionManagement>-->
-
-    <pluginRepositories>
-        <pluginRepository>
-            <id>central</id>
-            <name>Central Repository</name>
-            <url>https://repo.maven.apache.org/maven2</url>
-            <layout>default</layout>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <releases>
-                <updatePolicy>never</updatePolicy>
-            </releases>
-        </pluginRepository>
-    </pluginRepositories>
-
-    <repositories>
-        <!-- EBI repo -->
-        <repository>
-            <id>nexus-ebi-repo</id>
-            <name>The EBI internal repository</name>
-            <url>https://www.ebi.ac.uk/Tools/maven/repos/content/groups/ebi-repo/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-        <!-- EBI SNAPSHOT repo -->
-        <repository>
-            <id>nexus-ebi-snapshot-repo</id>
-            <name>The EBI internal snapshot repository</name>
-            <url>https://www.ebi.ac.uk/Tools/maven/repos/content/groups/ebi-snapshots/</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
+  <pluginRepositories>
+    <pluginRepository>
+      <id>central</id>
+      <name>Central Repository</name>
+      <url>https://repo.maven.apache.org/maven2</url>
+      <layout>default</layout>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <releases>
+        <updatePolicy>never</updatePolicy>
+      </releases>
+    </pluginRepository>
+  </pluginRepositories>
+  <repositories>
+    <!-- EBI repo -->
+    <repository>
+      <id>nexus-ebi-repo</id>
+      <name>The EBI internal repository</name>
+      <url>https://www.ebi.ac.uk/Tools/maven/repos/content/groups/ebi-repo/</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+    <!-- EBI SNAPSHOT repo -->
+    <repository>
+      <id>nexus-ebi-snapshot-repo</id>
+      <name>The EBI internal snapshot repository</name>
+      <url>https://www.ebi.ac.uk/Tools/maven/repos/content/groups/ebi-snapshots/</url>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
 </project>
